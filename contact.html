@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Tell Northstar Construction about your building, renovation, or commercial construction project.">
+  <meta name="keywords" content="contact construction company, construction quote, building project consultation">
+  <link rel="canonical" href="https://example.com/contact.html">
+  <title>Contact Us | Northstar Construction</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Northstar Construction home">Northstar<span>Construction</span></a>
+    <button class="menu-toggle" type="button" aria-label="Open navigation menu" aria-controls="primary-navigation" aria-expanded="false">
+      <div class="hamburger-icon" aria-hidden="true"><span></span><span></span><span></span></div>
+    </button>
+    <nav class="site-nav" id="primary-navigation" aria-label="Main navigation">
+      <a href="index.html" aria-label="Go to homepage">Home</a>
+      <a href="services.html" aria-label="View our services">Services</a>
+      <a href="contact.html" aria-label="Contact Northstar Construction" aria-current="page">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="page-banner" aria-labelledby="page-title">
+      <p class="eyebrow">Start a conversation</p>
+      <h1 id="page-title">Tell us what you’re planning</h1>
+      <p>Share a few details and our team will be in touch to talk through your project.</p>
+    </section>
+
+    <section class="content-section contact-layout" aria-label="Contact information and form">
+      <div class="contact-copy">
+        <p class="eyebrow">We’re ready to listen</p>
+        <h2>Good projects start with a good conversation.</h2>
+        <p>Whether you have a clear plan or are just exploring possibilities, we’ll help you understand the next steps.</p>
+        <div class="contact-detail">
+          <h3>Email</h3>
+          <a href="mailto:hello@example.com">hello@example.com</a>
+        </div>
+        <div class="contact-detail">
+          <h3>Phone</h3>
+          <a href="tel:+15550102020">(555) 010-2020</a>
+        </div>
+      </div>
+
+      <form class="contact-form" id="contact-form">
+        <div class="form-field">
+          <label for="full-name">Full Name</label>
+          <input type="text" id="full-name" name="name" autocomplete="name" placeholder="Your name" required>
+        </div>
+        <div class="form-field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" placeholder="you@example.com" required>
+        </div>
+        <div class="form-field">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" rows="5" placeholder="Tell us a little about your project..." required></textarea>
+        </div>
+        <button class="button" type="submit" aria-label="Submit your project inquiry">Send inquiry</button>
+        <p class="form-success" id="form-success" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="brand brand-footer" href="index.html" aria-label="Northstar Construction home">Northstar<span>Construction</span></a>
+    <p>Thoughtful construction. Quality craftsmanship.</p>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="services.html">Services</a>
+      <a href="mailto:hello@example.com" aria-label="Email Northstar Construction">hello@example.com</a>
+    </div>
+    <p class="copyright">&copy; <span class="current-year">2026</span> Northstar Construction. All rights reserved.</p>
+  </footer>
+  <script src="script.js"></script>
+</body>
+</html>
