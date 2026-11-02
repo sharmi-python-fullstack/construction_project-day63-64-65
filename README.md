@@ -1,6 +1,6 @@
 # Northstar Construction Website
 
-A responsive three-page construction company website built with HTML, CSS, and vanilla JavaScript. It includes a services overview, a contact form with browser-local autofill, and an optional Gemini-powered chatbot and homepage content generator.
+A responsive three-page construction company website built with HTML, CSS, vanilla JavaScript, and a small Python standard-library server. It includes a services overview, a contact form with browser-local autofill, and a Gemini-powered general-purpose chatbot and homepage content generator.
 
 ## Pages and features
 
@@ -9,17 +9,24 @@ A responsive three-page construction company website built with HTML, CSS, and v
 - `contact.html` — contact form with saved name/email and a local success message.
 - Shared responsive navigation, accessible labels, SEO metadata, and footer on all pages.
 - `style.css` — shared responsive styles, mobile menu, form, cards, and chatbot UI.
-- `script.js` — shared navigation, form, Gemini API, and chatbot behavior.
+- `script.js` — shared navigation, form, and chatbot behavior.
+- `server.py` — serves the website and securely proxies Gemini requests without exposing the API key to the browser.
+- `.env.example` — example server configuration; copy it to `.env` and add your API key.
 
-## Run locally
+## Run locally with Gemini
 
-Open `index.html` in a browser, or serve this folder with a local static web server and navigate to the page. The navigation links work between the three HTML pages.
+1. Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey).
+2. In PowerShell, run `Copy-Item .env.example .env`, then open `.env` and replace the example value with your key. Keep `.env` private; it is excluded by `.gitignore`.
+3. From this folder, run `python server.py`.
+4. Open `http://127.0.0.1:8765` in your browser.
 
-## Gemini setup
+If a different app is already using port 8765, run `python server.py` with a custom port instead: `set PORT=9000` then `python server.py`, and open `http://127.0.0.1:9000`.
 
-The Gemini integration is disabled until an API key is configured. For a quick local experiment, set `GEMINI_API_KEY` near the top of `script.js`. A key placed in browser JavaScript is visible to visitors and must not be used on a public or production website. For deployment, route Gemini requests through a server-side endpoint that stores the key securely.
+The website and `/api/chat` endpoint must be accessed through this server; opening `index.html` directly will not connect to Gemini. The server uses the `gemini-3.8-flash` model by default. Change `GEMINI_MODEL` in `.env` to another model available to your API key if needed. No Python packages need to be installed.
 
-Without a configured key, generated homepage sections and chatbot responses show a friendly fallback. The main page content and services remain available.
+The chatbot can answer general questions and use the conversation history for follow-ups. Its prompt also guides it to give project-specific construction inquiries to the Northstar team when a quote, site visit, or licensed professional is needed. The homepage's generated About and Services sections use the same Gemini connection.
+
+If the key is missing or Gemini cannot be reached, the chatbot displays a useful error and the rest of the site remains available. Do not commit `.env` or put the key in browser code. For a public deployment, run the Python server as a backend and configure `GEMINI_API_KEY` as a private environment variable in your hosting provider; do not expose the development server directly to the internet.
 
 ## Before publishing
 

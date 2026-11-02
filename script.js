@@ -1,35 +1,31 @@
-// Add a Gemini API key here for local testing. Never publish a browser-exposed key.
-const GEMINI_API_KEY = "";
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const CHAT_API_URL = "/api/chat";
 const CONTENT_ERROR = "Failed to load content. Please try again later.";
+const MAX_HISTORY_MESSAGES = 12;
+const MAX_HISTORY_TEXT_LENGTH = 4000;
 
 async function callGemini(prompt, history = []) {
-  if (!GEMINI_API_KEY.trim()) {
-    throw new Error("Gemini API key is not configured.");
-  }
-
-  const contents = [...history, { role: "user", parts: [{ text: prompt }] }];
-  const response = await fetch(`${GEMINI_API_URL}?key=${encodeURIComponent(GEMINI_API_KEY)}`, {
+  const response = await fetch(CHAT_API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents })
+    body: JSON.stringify({ message: prompt, history })
   });
 
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error("The assistant returned an invalid response.");
+  }
+
   if (!response.ok) {
-    throw new Error(`Gemini request failed with status ${response.status}.`);
+    throw new Error(data.error || `The assistant request failed (${response.status}).`);
   }
 
-  const data = await response.json();
-  const answer = data.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text || "")
-    .join("")
-    .trim();
-
-  if (!answer) {
-    throw new Error("Gemini returned an empty response.");
+  if (typeof data.answer !== "string" || !data.answer.trim()) {
+    throw new Error("The assistant returned an empty response.");
   }
 
-  return answer;
+  return data.answer.trim();
 }
 
 function showGeneratedError(element) {
@@ -176,7 +172,7 @@ function initializeChatbot() {
     panel.setAttribute("aria-hidden", String(!isOpen));
     panel.inert = !isOpen;
     toggle.setAttribute("aria-expanded", String(isOpen));
-    toggle.setAttribute("aria-label", isOpen ? "Close project assistant" : "Open project assistant");
+    toggle.setAttribute("aria-label", isOpen ? "Close AI assistant" : "Open AI assistant");
     if (isOpen) {
       input.focus();
     } else {
@@ -190,11 +186,7 @@ function initializeChatbot() {
     if (event.key === "Escape") setOpen(false);
   });
 
-  addMessage("Hello! How can I help you with your construction project?", "ai");
-  history.push({
-    role: "model",
-    parts: [{ text: "Hello! How can I help you with your construction project?" }]
-  });
+  addMessage("Hello! Ask me anything. I can help with construction projects and more.", "ai");
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -214,20 +206,20 @@ function initializeChatbot() {
     messages.scrollTop = messages.scrollHeight;
 
     try {
-      const answer = await callGemini(
-        `You are a helpful, professional assistant for Northstar Construction. Answer questions about construction projects clearly and responsibly. If a question needs a site visit, quote, or licensed professional, recommend speaking with the company. User question: ${prompt}`,
-        history
-      );
+      const answer = await callGemini(prompt, history);
       typing.remove();
       addMessage(answer, "ai");
       history.push(
-        { role: "user", parts: [{ text: prompt }] },
-        { role: "model", parts: [{ text: answer }] }
+        { role: "user", parts: [{ text: prompt.slice(0, MAX_HISTORY_TEXT_LENGTH) }] },
+        { role: "model", parts: [{ text: answer.slice(0, MAX_HISTORY_TEXT_LENGTH) }] }
       );
+      if (history.length > MAX_HISTORY_MESSAGES) {
+        history.splice(0, history.length - MAX_HISTORY_MESSAGES);
+      }
     } catch (error) {
       console.error("Could not get a chatbot response:", error);
       typing.remove();
-      addMessage("I’m sorry, I can’t connect to the assistant right now. Please try again later or contact our team directly.", "ai");
+      addMessage(error.message || "I’m sorry, I can’t connect to the assistant right now. Please try again later.", "ai");
     } finally {
       isSending = false;
       sendButton.disabled = false;
