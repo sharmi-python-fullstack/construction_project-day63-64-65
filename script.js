@@ -1,5 +1,4 @@
 const CHAT_API_URL = "/api/chat";
-const CONTENT_ERROR = "Failed to load content. Please try again later.";
 const MAX_HISTORY_MESSAGES = 12;
 const MAX_HISTORY_TEXT_LENGTH = 4000;
 
@@ -10,15 +9,30 @@ async function callGemini(prompt, history = []) {
     body: JSON.stringify({ message: prompt, history })
   });
 
+  const responseBody = await response.text();
   let data;
   try {
-    data = await response.json();
+    data = JSON.parse(responseBody);
   } catch {
-    throw new Error("The assistant returned an invalid response.");
+    const contentType = response.headers.get("content-type") || "unknown content type";
+    if (contentType.includes("text/html")) {
+      throw new Error(
+        `The chat endpoint returned a web page instead of JSON (HTTP ${response.status}). ` +
+        "Stop other local servers, run `python server.py` in this project folder, and open http://127.0.0.1:8765."
+      );
+    }
+    throw new Error(
+      `The chat endpoint returned an invalid response (HTTP ${response.status}, ${contentType}). ` +
+      "Check that the Python server is running for this project."
+    );
+  }
+
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error(`The chat endpoint returned an unexpected response (HTTP ${response.status}).`);
   }
 
   if (!response.ok) {
-    throw new Error(data.error || `The assistant request failed (${response.status}).`);
+    throw new Error(typeof data.error === "string" ? data.error : `The assistant request failed (${response.status}).`);
   }
 
   if (typeof data.answer !== "string" || !data.answer.trim()) {
@@ -26,62 +40,6 @@ async function callGemini(prompt, history = []) {
   }
 
   return data.answer.trim();
-}
-
-function showGeneratedError(element) {
-  element.classList.remove("loading-content");
-  element.textContent = CONTENT_ERROR;
-}
-
-function renderParagraphs(container, text) {
-  container.replaceChildren();
-  text.split(/\n+/).map((paragraph) => paragraph.trim()).filter(Boolean).forEach((paragraph) => {
-    const item = document.createElement("p");
-    item.textContent = paragraph;
-    container.append(item);
-  });
-  container.classList.remove("loading-content");
-}
-
-function renderServiceBullets(container, text) {
-  container.replaceChildren();
-  const bullets = text
-    .split(/\n+/)
-    .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
-    .filter(Boolean);
-
-  if (bullets.length === 0) {
-    throw new Error("Gemini returned no services to display.");
-  }
-
-  const list = document.createElement("ul");
-  bullets.forEach((bullet) => {
-    const item = document.createElement("li");
-    item.textContent = bullet;
-    list.append(item);
-  });
-  container.append(list);
-  container.classList.remove("loading-content");
-}
-
-async function generateAboutContent(container) {
-  try {
-    const prompt = "Write a professional About Us section for Northstar Construction, a residential and commercial construction company. Use a warm, confident, trustworthy tone. Emphasize integrity, quality craftsmanship, clear communication, thoughtful planning, and building lasting relationships. Write two concise paragraphs and do not use a heading.";
-    renderParagraphs(container, await callGemini(prompt));
-  } catch (error) {
-    console.error("Could not generate the About Us content:", error);
-    showGeneratedError(container);
-  }
-}
-
-async function generateServicesContent(container) {
-  try {
-    const prompt = "List five core services for Northstar Construction, a residential and commercial construction company. Return only a plain-text bulleted list, with one concise service and description per line. Do not include an introduction or markdown heading.";
-    renderServiceBullets(container, await callGemini(prompt));
-  } catch (error) {
-    console.error("Could not generate the services content:", error);
-    showGeneratedError(container);
-  }
 }
 
 function initializeNavigation() {
@@ -232,11 +190,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeNavigation();
   initializeContactForm();
   initializeChatbot();
-
-  const aboutContent = document.querySelector("#about-us-content");
-  const servicesContent = document.querySelector("#services-content");
-  if (aboutContent) generateAboutContent(aboutContent);
-  if (servicesContent) generateServicesContent(servicesContent);
 
   document.querySelectorAll(".current-year").forEach((element) => {
     element.textContent = String(new Date().getFullYear());

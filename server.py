@@ -76,7 +76,7 @@ def get_gemini_answer(message, history):
     if not api_key:
         raise ApiError(503, "Gemini is not configured. Add GEMINI_API_KEY to your .env file and restart the server.")
 
-    model = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip()
+    model = os.environ.get("GEMINI_MODEL", "gemini-flash-lite-latest").strip()
     if not model:
         raise ApiError(500, "GEMINI_MODEL cannot be empty.")
 
@@ -104,6 +104,12 @@ def get_gemini_answer(message, history):
             raise ApiError(502, "Gemini rejected the API key. Check that it is valid and enabled.") from error
         if error.code == 404:
             raise ApiError(502, "Gemini could not find the configured model. Check GEMINI_MODEL.") from error
+        if error.code == 503:
+            raise ApiError(
+                503,
+                "Gemini is temporarily unavailable or the selected model is overloaded. "
+                "Try again shortly or change GEMINI_MODEL in your .env file.",
+            ) from error
         raise ApiError(502, f"Gemini could not complete the request (HTTP {error.code}).") from error
     except URLError as error:
         if isinstance(error.reason, (TimeoutError, socket.timeout)):

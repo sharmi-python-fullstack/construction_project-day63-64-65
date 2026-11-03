@@ -22,6 +22,18 @@ class FakeResponse:
 
 
 class GeminiProxyTests(unittest.TestCase):
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"}, clear=True)
+    @patch("server.urlopen")
+    def test_uses_available_default_model(self, mock_urlopen):
+        mock_urlopen.return_value = FakeResponse({
+            "candidates": [{"content": {"parts": [{"text": "Hello"}]}}]
+        })
+
+        get_gemini_answer("Hi", [])
+
+        request = mock_urlopen.call_args.args[0]
+        self.assertIn("/models/gemini-flash-lite-latest:generateContent?", request.full_url)
+
     @patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "GEMINI_MODEL": "test-model"})
     @patch("server.urlopen")
     def test_sends_conversation_and_returns_answer(self, mock_urlopen):
@@ -59,6 +71,17 @@ class GeminiProxyTests(unittest.TestCase):
 
         self.assertEqual(context.exception.status, 429)
         self.assertIn("usage limit", str(context.exception))
+
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"})
+    @patch("server.urlopen")
+    def test_model_overload_error_is_actionable(self, mock_urlopen):
+        mock_urlopen.side_effect = HTTPError("https://example.test", 503, "Service Unavailable", {}, None)
+
+        with self.assertRaises(ApiError) as context:
+            get_gemini_answer("Hi", [])
+
+        self.assertEqual(context.exception.status, 503)
+        self.assertIn("temporarily unavailable", str(context.exception))
 
     def test_rejects_malformed_history(self):
         with self.assertRaises(ApiError):
